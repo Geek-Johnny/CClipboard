@@ -10,10 +10,20 @@ struct HistoryRowView: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
+            if item.type == .image, let nsImage = storage.loadImage(for: item) {
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 56, height: 56)
+                    .clipped()
+                    .cornerRadius(6)
+            }
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(String(item.content.prefix(500)))
-                    .lineLimit(3)
-                    .font(.body)
+                    .lineLimit(item.type == .image ? 1 : 3)
+                    .font(item.type == .image ? .caption : .body)
+                    .foregroundColor(item.type == .image ? .secondary : .primary)
 
                 Text(relativeTime(from: item.timestamp))
                     .font(.caption)

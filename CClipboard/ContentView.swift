@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 extension Notification.Name {
@@ -32,7 +33,6 @@ struct ContentView: View {
         .frame(width: 360, height: 420)
         .onAppear {
             isSearchFocused = true
-            // 打开时自动选中第一条
             if let first = filteredItems.first {
                 selectedId = first.id
             }
@@ -105,17 +105,21 @@ struct ContentView: View {
 
     private func copyToClipboard(_ item: ClipboardItem) {
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(item.content, forType: .string)
+        if item.type == .image, let image = storage.loadImage(for: item) {
+            NSPasteboard.general.writeObjects([image])
+        } else {
+            NSPasteboard.general.setString(item.content, forType: .string)
+        }
     }
 
     private func copyAndPaste(_ item: ClipboardItem) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(item.content, forType: .string)
+        // Copy to clipboard first
+        copyToClipboard(item)
 
-        // 先关闭面板 → 回到之前的应用
+        // Close panel → return to previous app
         NotificationCenter.default.post(name: .closeClipboardPanel, object: nil)
 
-        // 再模拟 Cmd+V 粘贴到原应用
+        // Cmd+V into the active app
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
             guard let source = CGEventSource(stateID: .combinedSessionState),
                   let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true),

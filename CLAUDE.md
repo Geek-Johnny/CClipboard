@@ -40,20 +40,25 @@ CClipboard/
     GlobalHotkeyService.swift    # 全局快捷键（⇧⌘V）
   Views/
     HistoryRowView.swift         # 单条历史记录行视图
+  Images/
+    clipboard.svg                # App 图标源文件（SVG）
 ```
 
-## 版本 v1.0 — 功能清单
+## 版本 v1.1 — 功能清单
 
 - [x] 菜单栏常驻图标（`doc.on.clipboard` SF Symbol）
 - [x] 剪贴板文本自动监听（0.5s 轮询）
+- [x] 剪贴板图片自动监听（支持 PNG/TIFF/JPEG）
 - [x] JSON 持久化存储（上限 200 条）
+- [x] 图片文件独立存储（Images/ 目录，PNG 格式）
 - [x] 搜索历史记录（实时过滤）
 - [x] 条目固定/取消固定（pin）
 - [x] 相对时间显示（刚刚/N分钟前/N小时前/天前/更早）
+- [x] 图片缩略图预览
 - [x] 点击复制到剪贴板 + 自动关闭窗口 + 回到上一个应用
 - [x] 键盘导航（↑↓选择，回车粘贴到原应用）
 - [x] 全局快捷键 ⇧⌘V 弹出浮动面板
-- [x] 清除全部历史
+- [x] 清除全部历史（同时清理图片文件）
 - [x] Escape / ⌘W 关闭窗口
 
 ## 交互方式
@@ -95,12 +100,15 @@ CClipboard/
 - Escape / ⌘W 关闭
 - 相对时间显示 + 空状态提示
 
-### 第六阶段 ⬜ 图片支持
-- 扩展模型支持图片类型（type + imageData）
-- 监听 NSPasteboard 图片内容
-- 图片缩略图显示
-- 图片文件存储（文件系统而非 JSON）
-- 点击图片项恢复到剪贴板
+### 第六阶段 ✅ 图片支持
+- [x] 扩展模型支持图片类型（ItemType 枚举）
+- [x] 监听 NSPasteboard 图片内容（readObjects forClasses: NSImage）
+- [x] 图片缩略图显示（maxHeight 80，圆角缩略图）
+- [x] 图片文件存储（Images/ 目录，PNG 格式，避免 JSON 膨胀）
+- [x] 点击/回车复制图片回剪贴板（writeObjects）
+- [x] 图片去重（基于内容哈希）
+- [x] 溢出清理时自动删除对应图片文件
+- [x] 清除全部时清理所有图片文件
 
 ## 技术要点
 
@@ -110,6 +118,9 @@ CClipboard/
 - **去重**：跳过完全相同的连续复制
 - **全局快捷键**：Carbon `RegisterEventHotKey`
 - **浮动面板**：`NSPanel` + `.nonactivatingPanel`，`NSApp.hide(nil)` 返回上一个应用
+- **图片存储**：PNG 格式存储于 `Application Support/CClipboard/Images/`，文件名 `{uuid}.png`。
+- **图片去重**：基于数据大小 + 前 64 字节的 FNV 式哈希，避免重复记录。
+- **图片检测**：使用 `NSPasteboard.readObjects(forClasses: [NSImage.self])`，文本优先（复制内容同时有文字和图片时只记录文本）。
 - **隐私**：App Sandbox 下 NSPasteboard 读取正常，无需特殊权限
 
 ## Conventions
